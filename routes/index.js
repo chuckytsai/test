@@ -4,19 +4,18 @@ var Request = require('tedious').Request;
 var router = express.Router();
 
 var config = {
-  server: '10.1.100.139',  //update me
+  server: process.env['DB_HOST'],
   authentication: {
     type: 'default',
     options: {
-      userName: 'sa', //update me
-      password: 'TmcTW@2019',  //update me
+      userName: process.env['DB_USER'],
+      password: process.env['DB_PASS'],
     }
   },
   options: {
     encrypt: false,
     trustServerCertificate: true,
     enableArithAbort: true,
-    database: "TmcRobo-Latest"
   }
 };
 var connection = new Connection(config);
@@ -26,13 +25,13 @@ connection.on('connect', function (err) {
     console.log("Connection Failed");
     throw err;
   }
-  executeStatement()
+  executeStatement();
 });
 
 connection.connect();
 
 function executeStatement() {
-  request = new Request("SELECT TOP (1000) [Id],[Name],[NameEng],[EmployeeId],[Title],[Password],[IsEnabled],[IsAdmin],[UpdatedTime],[AreaId],[EMailAddress],[Setting] FROM [TmcRobo-Latest].[dbo].[User]", function (err) {
+  request = new Request("SELECT TOP (1000) [Id],[Name],[NameEng],[EmployeeId],[Title],[IsEnabled],[IsAdmin],[Setting] FROM [TmcRobo-Latest].[dbo].[User]", function (err) {
     if (err) {
       console.log(err)
     }
@@ -43,6 +42,7 @@ function executeStatement() {
   });
   connection.execSql(request);
 }
+connection.cancel();
 
 /* GET home page. */
 router.get('/', function (req, res, next) {
