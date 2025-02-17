@@ -26,12 +26,22 @@ router.get('/list', function (req, res, next) {
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
     if (err) {
-      console.log("Connection Failed");
+      res.render('api', {
+        obj: JSON.stringify({
+          code: 200,
+          message: err,
+        })
+      });
       throw err;
     }
     request = new Request("SELECT TOP (1000) [Id],[Name],[NameEng],[EmployeeId],[Title],[IsEnabled],[IsAdmin] FROM [TmcRobo-Latest].[dbo].[User]", function (err) {
       if (err) {
-        console.log(err)
+        res.render('api', {
+          obj: JSON.stringify({
+            code: 200,
+            message: err,
+          })
+        });
       }
 
       res.render('api', {
