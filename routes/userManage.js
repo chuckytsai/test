@@ -69,14 +69,58 @@ router.get('/list', function (req, res, next) {
 
 // 新增使用者
 router.post('/add', function (req, res, next) {
+  // console.log(req["_startTime"])
+  // console.log(req.body)
+  var connection = new Connection(config);
+  connection.on('connect', function await(err) {
+    // If no error, then good to proceed.
+    if (err) {
+      res.json({
+        code: 500,
+        message: err,
+      });
+      throw err;
+    }
+    var sqlGet = "SELECT * FROM [User] WHERE EmployeeId ='" + req.body.employeeId + "'";
+    request = new Request(sqlGet, function (err, rows) {
+      if (err) {
+        res.json({
+          code: 500,
+          message: err,
+        });
+      }
 
-  
-  console.log(req["_startTime"])
-  console.log(req.body)
-  res.json({
-    code: 200,
-    message: null,
+      if (rows > 0) {
+        res.json({
+          code: 303,
+          message: "已有重複帳號",
+        });
+      }
+      else {
+        var sqlAdd = "INSERT [User] (Id, Name, NameEng, EmployeeId, Title, Password, IsEnabled, IsAdmin, UpdatedTime, AreaId, EMailAddress, Setting) VALUES ('00000000-0000-0000-0000-000000000001', 'Test', '','000002', '管理者', 'BriJvAP8DqiRFdaMLsQCFQ==', 1, 1, '2015-03-11 00:00:00.000', NULL, NULL, NULL)";
+        requestAdd = new Request(sqlAdd, function (err, rows) {
+          if (err) {
+            res.json({
+              code: 500,
+              message: err,
+            });
+          }
+          res.json({
+            code: 200,
+            message: "成功",
+          });
+        })
+
+        connection.execSql(requestAdd)
+      }
+    });
+
+    connection.execSql(request)
   });
+
+  connection.connect();
+
+  connection.cancel();
 });
 
 // 編輯使用者
