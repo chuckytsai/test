@@ -1,3 +1,4 @@
+const dayjs = require('dayjs');
 var express = require('express');
 var Connection = require('tedious').Connection;
 var Request = require('tedious').Request;
@@ -72,7 +73,7 @@ router.post('/list', function (req, res, next) {
       const datas = {};
       const UpdatedTime = String(columns[3].value);
       datas["examineId"] = columns[0].value;
-      datas["examineDate"] = Date.parse(UpdatedTime) / 1000;
+      datas["examineDate"] = dayjs(UpdatedTime).format("YYYY-MM-DD");
       datas["queueNo"] = columns[4].value;
       datas["patientName"] = columns[1].value;
       datas["waitingSecond"] = columns[5].value;
