@@ -126,7 +126,6 @@ router.post('/add', function (req, res, next) {
 
 // 編輯使用者
 router.post('/edit', function (req, res, next) {
-
   var connection = new Connection(config);
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
