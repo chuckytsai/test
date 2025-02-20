@@ -20,31 +20,6 @@ var config = {
   }
 };
 
-const examineRecordFindUserId = (jobId) => {
-  let id = null;
-  var connection = new Connection(config);
-  connection.on('connect', function await(err) {
-    // If no error, then good to proceed.
-    if (err) {
-      throw err;
-    }
-    var sqlTest = "SELECT * FROM [TmcRobo-Latest].[dbo].[ExamineRecord] WHERE JobId = '" + jobId + "'"
-    requestTest = new Request(sqlTest, function (err, rows) {
-      if (err) {
-        throw err;
-      }
-    });
-
-    requestTest.on("row", (columns) => {
-      console.log(columns[0].value)
-    });
-    connection.execSql(requestTest);
-  });
-  connection.connect();
-
-  connection.cancel();
-}
-
 /* 檢驗歷程查詢清單. */
 router.post('/list', function (req, res, next) {
   var examineJobList = [];
@@ -58,8 +33,15 @@ router.post('/list', function (req, res, next) {
       });
       throw err;
     }
-    var sql = "SELECT * FROM [TmcRobo-Latest].[dbo].[ExamineJob] WHERE ExamineDate >= '" + req.body.startAt + "' AND ExamineDate <= '" + req.body.endAt + "' ORDER BY " + req.body.sortBy + " " + req.body.sort;
-    request = new Request(sql, function (err, rows) {
+    var sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er "
+    var jobId = "ON ej.Id = er.JobId "
+    var joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us "
+    var userName = "ON us.Id = er.UserId "
+    var startAt = "WHERE ej.ExamineDate >= '" + req.body.startAt + "' "
+    var endAt = "AND ej.ExamineDate <= '" + req.body.endAt + "' "
+    var sotBy = "ORDER BY " + req.body.sortBy.toUpperCase() + " " + req.body.sort.toUpperCase() + ", QueueNo ASC"
+    console.log(sql + jobId + joninUser + userName + startAt + endAt + sotBy)
+    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + sotBy, function (err, rows) {
       if (err) {
         res.json({
           code: 500,
@@ -67,20 +49,13 @@ router.post('/list', function (req, res, next) {
         });
       }
 
-      // 處理清單顯示多寡 && 利用ExamineRecord表單放入使用者ID
+      // 處理清單顯示多寡
       const list = [];
       examineJobList.map((item, i) => {
         if (i >= (req.body.pageSize * (req.body.pageNumber - 1)) && i < (req.body.pageNumber * req.body.pageSize)) {
-          setTimeout(() => {
-            console.log(examineRecordFindUserId(item.examineId))
-            list.push(item);
-          }, 1000);
+          list.push(item);
         }
       });
-
-      setInterval(() => {
-        console.log("不可以送出")
-      })
 
       res.json({
         code: 200,
@@ -95,15 +70,16 @@ router.post('/list', function (req, res, next) {
 
     request.on("row", (columns) => {
       const datas = {};
-      const UpdatedTime = String(columns[8].value);
+      const UpdatedTime = String(columns[3].value);
       datas["examineId"] = columns[0].value;
       datas["examineDate"] = Date.parse(UpdatedTime) / 1000;
-      datas["queueNo"] = columns[10].value;
-      datas["patientName"] = columns[2].value;
-      datas["waitingSecond"] = columns[17].value;
-      datas["serviceSecond"] = columns[18].value;
-      datas["status"] = columns[19].value;
-      datas["userName"] = null;
+      datas["queueNo"] = columns[4].value;
+      datas["patientName"] = columns[1].value;
+      datas["waitingSecond"] = columns[5].value;
+      datas["serviceSecond"] = columns[6].value;
+      datas["status"] = columns[7].value;
+      datas["userName"] = columns[8].value;
+      datas["patientName"] = columns[1].value
       examineJobList.push(datas);
     });
     connection.execSql(request);
