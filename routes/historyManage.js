@@ -1,10 +1,11 @@
-const dayjs = require('dayjs');
-var express = require('express');
-var Connection = require('tedious').Connection;
-var Request = require('tedious').Request;
-var router = express.Router();
+const dayjs = require('dayjs'); 
+const express = require('express'); 
+const Connection = require('tedious').Connection; 
+const Request = require('tedious').Request; 
+const router = express.Router();
+const keyWordIsNull = require("../public/javascripts/keyWordIsNull");
 
-var config = {
+const config = {
   server: process.env['DB_HOST'],
   authentication: {
     type: 'default',
@@ -23,8 +24,8 @@ var config = {
 
 /* 檢驗歷程查詢清單. */
 router.post('/list', function (req, res, next) {
-  var examineJobList = [];
-  var connection = new Connection(config);
+  const examineJobList = [];
+  const connection = new Connection(config);
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
     if (err) {
@@ -34,15 +35,17 @@ router.post('/list', function (req, res, next) {
       });
       throw err;
     }
-    var sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n"
-    var jobId = "ON ej.Id = er.JobId"+ "\n"
-    var joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us"+ "\n"
-    var userName = "ON us.Id = er.UserId"+ "\n"
-    var startAt = "WHERE ej.ExamineDate >= '" + req.body.startAt + "'"+ "\n"
-    var endAt = "AND ej.ExamineDate <= '" + req.body.endAt + "'"+ "\n"
-    var sotBy = "ORDER BY " + req.body.sortBy.toUpperCase() + "\n" + req.body.sort.toUpperCase() + ", QueueNo ASC"
-    console.log(sql + jobId + joninUser + userName + startAt + endAt + sotBy)
-    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + sotBy, function (err, rows) {
+    const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
+    const jobId = "ON ej.Id = er.JobId" + "\n";
+    const joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us" + "\n";
+    const userName = "ON us.Id = er.UserId" + "\n";
+    const startAt = "WHERE ej.ExamineDate >= '" + req.body.startAt + "'" + "\n";
+    const endAt = "AND ej.ExamineDate <= '" + req.body.endAt + "'" + "\n";
+    const queueNo = "AND ej.QueueNo LIKE '" + keyWordIsNull(req.body.queueNo) + "'\n";
+    const patientName = "AND ej.PatientName LIKE '" + keyWordIsNull(req.body.patientName) + "'\n";
+    const sotBy = "ORDER BY " + req.body.sortBy.toUpperCase() + "\n" + req.body.sort.toUpperCase() + ", QueueNo ASC";
+    console.log(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy)
+    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy, function (err, rows) {
       if (err) {
         res.json({
           code: 500,

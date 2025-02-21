@@ -1,11 +1,11 @@
-var express = require('express');
-var Connection = require('tedious').Connection;
-var Request = require('tedious').Request;
-var router = express.Router();
-var { v4: uuidv4 } = require('uuid');
-var dayjs = require('dayjs');
+const express = require('express');
+const Connection = require('tedious').Connection;
+const Request = require('tedious').Request;
+const router = express.Router();
+const { v4: uuidv4 } = require('uuid');
+const dayjs = require('dayjs');
 
-var config = {
+const config = {
   server: process.env['DB_HOST'],
   authentication: {
     type: 'default',
@@ -24,8 +24,8 @@ var config = {
 
 /* 使用者管理清單. */
 router.get('/list', function (req, res, next) {
-  var userManageList = [];
-  var connection = new Connection(config);
+  const userManageList = [];
+  const connection = new Connection(config);
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
     if (err) {
@@ -69,7 +69,7 @@ router.get('/list', function (req, res, next) {
 
 // 新增使用者
 router.post('/add', function (req, res, next) {
-  var connection = new Connection(config);
+  const connection = new Connection(config);
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
     if (err) {
@@ -79,7 +79,7 @@ router.post('/add', function (req, res, next) {
       });
       throw err;
     }
-    var sqlGet = "SELECT * FROM [User] WHERE EmployeeId ='" + req.body.employeeId + "'";
+    const sqlGet = "SELECT * FROM [User] WHERE EmployeeId ='" + req.body.employeeId + "'";
     request = new Request(sqlGet, function (err, rows) {
       if (err) {
         res.json({
@@ -95,12 +95,12 @@ router.post('/add', function (req, res, next) {
         });
       }
       else {
-        var sqlAdd = "INSERT [User] (Id, Name, NameEng, EmployeeId, Title, Password, IsEnabled, IsAdmin, UpdatedTime, AreaId, EMailAddress, Setting)";
+        const sqlAdd = "INSERT [User] (Id, Name, NameEng, EmployeeId, Title, Password, IsEnabled, IsAdmin, UpdatedTime, AreaId, EMailAddress, Setting)";
         const englishName = req.body.englishName ? req.body.englishName : ' '
         const isAdmin = req.body.isAdmin ? 1 : 0;
         const UpdatedTime = String(req["_startTime"]);
 
-        var sqlValue = "VALUES ('" + uuidv4() + "', '" + req.body.userName + "', '" + englishName + "','" + req.body.employeeId + "', '" + req.body.title + "', 'BriJvAP8DqiRFdaMLsQCFQ==', 1, " + isAdmin + ", '" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "', NULL, NULL, NULL)";
+        const sqlValue = "VALUES ('" + uuidv4() + "', '" + req.body.userName + "', '" + englishName + "','" + req.body.employeeId + "', '" + req.body.title + "', 'BriJvAP8DqiRFdaMLsQCFQ==', 1, " + isAdmin + ", '" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "', NULL, NULL, NULL)";
         requestAdd = new Request(sqlAdd + sqlValue, function (err, rows) {
           if (err) {
             res.json({
@@ -126,7 +126,7 @@ router.post('/add', function (req, res, next) {
 
 // 編輯使用者
 router.post('/edit', function (req, res, next) {
-  var connection = new Connection(config);
+  const connection = new Connection(config);
   connection.on('connect', function await(err) {
     // If no error, then good to proceed.
     if (err) {
@@ -136,7 +136,7 @@ router.post('/edit', function (req, res, next) {
       });
       throw err;
     }
-    var sqlGet = "SELECT * FROM [User] WHERE Id ='" + req.body.userId + "'";
+    const sqlGet = "SELECT * FROM [User] WHERE Id ='" + req.body.userId + "'";
     request = new Request(sqlGet, function (err, rows) {
       if (err) {
         res.json({
@@ -156,7 +156,7 @@ router.post('/edit', function (req, res, next) {
         const isAdmin = req.body.isAdmin ? 1 : 0;
         const isEnabled = req.body.isEnabled ? 1 : 0;
         const UpdatedTime = String(req["_startTime"]);
-        var sql = "UPDATE [User] SET Name='" + req.body.userName + "', NameEng='" + req.body.userNameEng + "',  Title='" + req.body.title + "', IsEnabled=" + isEnabled + ", IsAdmin=" + isAdmin + ", UpdatedTime='" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "' WHERE Id=" + "'" + req.body.userId + "'";
+        const sql = "UPDATE [User] SET Name='" + req.body.userName + "', NameEng='" + req.body.userNameEng + "',  Title='" + req.body.title + "', IsEnabled=" + isEnabled + ", IsAdmin=" + isAdmin + ", UpdatedTime='" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "' WHERE Id=" + "'" + req.body.userId + "'";
         requestEdit = new Request(sql, function (err, rows) {
           if (err) {
             res.json({
