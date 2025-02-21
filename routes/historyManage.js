@@ -1,7 +1,7 @@
-const dayjs = require('dayjs'); 
-const express = require('express'); 
-const Connection = require('tedious').Connection; 
-const Request = require('tedious').Request; 
+const dayjs = require('dayjs');
+const express = require('express');
+const Connection = require('tedious').Connection;
+const Request = require('tedious').Request;
 const router = express.Router();
 const keyWordIsNull = require("../public/javascripts/keyWordIsNull");
 
@@ -24,6 +24,13 @@ const config = {
 
 /* 檢驗歷程查詢清單. */
 router.post('/list', function (req, res, next) {
+  const reqStartAt = req.body.startAt ? req.body.startAt : dayjs().format("YYYY-MM-DD");
+  const reqEndAt = req.body.endAt ? req.body.endAt : dayjs().format("YYYY-MM-DD");
+  const reqSortBy = req.body.sortBy ? req.body.sortBy.toUpperCase() : "ExamineDate";
+  const reqSort = req.body.sort ? req.body.sort.toUpperCase() : "ASC";
+  const reqPageSize = req.body.pageSize ? req.body.pageSize : 999;
+  const reqPageNumber = req.body.pageNumber ? req.body.pageNumber : 1;
+
   const examineJobList = [];
   const connection = new Connection(config);
   connection.on('connect', function await(err) {
@@ -35,15 +42,16 @@ router.post('/list', function (req, res, next) {
       });
       throw err;
     }
+
     const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
     const jobId = "ON ej.Id = er.JobId" + "\n";
     const joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us" + "\n";
     const userName = "ON us.Id = er.UserId" + "\n";
-    const startAt = "WHERE ej.ExamineDate >= '" + req.body.startAt + "'" + "\n";
-    const endAt = "AND ej.ExamineDate <= '" + req.body.endAt + "'" + "\n";
+    const startAt = "WHERE ej.ExamineDate >= '" + reqStartAt + "'" + "\n";
+    const endAt = "AND ej.ExamineDate <= '" + reqEndAt + "'" + "\n";
     const queueNo = "AND ej.QueueNo LIKE '" + keyWordIsNull(req.body.queueNo) + "'\n";
     const patientName = "AND ej.PatientName LIKE '" + keyWordIsNull(req.body.patientName) + "'\n";
-    const sotBy = "ORDER BY " + req.body.sortBy.toUpperCase() + "\n" + req.body.sort.toUpperCase() + ", QueueNo ASC";
+    const sotBy = "ORDER BY " + reqSortBy + "\n" + reqSort + ", QueueNo ASC";
     console.log(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy)
     request = new Request(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy, function (err, rows) {
       if (err) {
@@ -56,7 +64,7 @@ router.post('/list', function (req, res, next) {
       // 處理清單顯示多寡
       const list = [];
       examineJobList.map((item, i) => {
-        if (i >= (req.body.pageSize * (req.body.pageNumber - 1)) && i < (req.body.pageNumber * req.body.pageSize)) {
+        if (i >= (reqPageSize * (reqPageNumber - 1)) && i < (reqPageNumber * reqPageSize)) {
           list.push(item);
         }
       });
@@ -65,6 +73,8 @@ router.post('/list', function (req, res, next) {
         code: 200,
         message: null,
         data: {
+          startAt : reqStartAt,
+          endAt : reqEndAt,
           counts: rows,
           totalPages: Math.ceil(rows / 10),
           list: [...list]
@@ -85,6 +95,50 @@ router.post('/list', function (req, res, next) {
       datas["userName"] = columns[8].value;
       datas["patientName"] = columns[1].value
       examineJobList.push(datas);
+    });
+    connection.execSql(request);
+  });
+  connection.connect();
+
+  connection.cancel();
+});
+
+/* 單筆檢驗項目清單. */
+router.post('/detailList', function (req, res, next) {
+  const list = [];
+  const connection = new Connection(config);
+  connection.on('connect', function await(err) {
+    // If no error, then good to proceed.
+    if (err) {
+      res.json({
+        code: 500,
+        message: err,
+      });
+      throw err;
+    }
+    const sql = "SELECT * FROM [TmcRobo-Latest].[dbo].[ExamineJobDetail]" + "\n";
+    const examineJobId = "WHERE examineJobId = '" + req.body.examineJobId + "'\n";
+    console.log(sql + examineJobId)
+    request = new Request(sql + examineJobId, function (err, rows) {
+      if (err) {
+        res.json({
+          code: 500,
+          message: err,
+        });
+      }
+
+      res.json({
+        code: 200,
+        message: null,
+        data: [...list]
+      });
+    });
+
+    request.on("row", (columns) => {
+      const datas = {};
+      datas["barcode"] = columns[4].value;
+      datas["test"] = columns[3].value;
+      list.push(datas);
     });
     connection.execSql(request);
   });
