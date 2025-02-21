@@ -43,7 +43,7 @@ router.post('/list', function (req, res, next) {
       throw err;
     }
 
-    const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
+    const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej" + "\n";
     const jobId = "ON ej.Id = er.JobId" + "\n";
     const joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us" + "\n";
     const userName = "ON us.Id = er.UserId" + "\n";
@@ -105,6 +105,8 @@ router.post('/list', function (req, res, next) {
 
 /* 單筆檢驗項目清單. */
 router.post('/detailList', function (req, res, next) {
+  const reqExamineJobId = req.body.examineJobId ? "'" +  req.body.examineJobId + "'\n" : "'00000000-0000-0000-0000-000000000000'" + "\n"
+
   const list = [];
   const connection = new Connection(config);
   connection.on('connect', function await(err) {
@@ -116,10 +118,12 @@ router.post('/detailList', function (req, res, next) {
       });
       throw err;
     }
-    const sql = "SELECT * FROM [TmcRobo-Latest].[dbo].[ExamineJobDetail]" + "\n";
-    const examineJobId = "WHERE examineJobId = '" + req.body.examineJobId + "'\n";
-    console.log(sql + examineJobId)
-    request = new Request(sql + examineJobId, function (err, rows) {
+    const sql = "SELECT ejd.Id,ejd.ExamineJobId,ejd.Status,ejd.HisRawData,ejd.Barcode,ejd.UpdatedTime,ej.Status FROM [TmcRobo-Latest].[dbo].[ExamineJobDetail] as ejd LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineJob] As ej" + "\n";
+    const id = "ON ejd.ExamineJobId = ej.Id"+ "\n";
+    const examineJobId = "WHERE ExamineJobId = " + reqExamineJobId;
+    const sotBy = "ORDER BY Barcode ASC";
+    console.log(sql + examineJobId + sotBy)
+    request = new Request(sql + id +  examineJobId + sotBy, function (err, rows) {
       if (err) {
         res.json({
           code: 500,
@@ -137,7 +141,28 @@ router.post('/detailList', function (req, res, next) {
     request.on("row", (columns) => {
       const datas = {};
       datas["barcode"] = columns[4].value;
-      datas["test"] = columns[3].value;
+      datas["status"] = columns[6].value;
+      if(JSON.parse(columns[3].value)["ContainerName"]) {
+        datas["containerName"] = JSON.parse(columns[3].value)["ContainerName"];
+      }
+      else {
+        datas["containerName"] = null;
+      }
+
+      if(JSON.parse(columns[3].value)["SpecimenName"]) {
+        datas["specimenName"] = JSON.parse(columns[3].value)["SpecimenName"];
+      }
+      else {
+        datas["specimenName"] = null;
+      }
+
+      if(JSON.parse(columns[3].value)["OrderNames"]) {
+        datas["orderNames"] = JSON.parse(columns[3].value)["OrderNames"];
+      }
+      else {
+        datas["opecimenName"] = null;
+      }
+
       list.push(datas);
     });
     connection.execSql(request);
@@ -146,5 +171,6 @@ router.post('/detailList', function (req, res, next) {
 
   connection.cancel();
 });
+
 
 module.exports = router;
