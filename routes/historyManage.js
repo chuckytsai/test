@@ -117,7 +117,7 @@ router.post('/detailList', function (req, res, next) {
       });
       throw err;
     }
-    const sql = "SELECT ejd.Id,ejd.ExamineJobId,ejd.Status,ejd.HisRawData,ejd.Barcode,ejd.UpdatedTime,ej.Status FROM [TmcRobo-Latest].[dbo].[ExamineJobDetail] as ejd LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineJob] As ej" + "\n";
+    const sql = "SELECT ejd.Id,ejd.ExamineJobId,ejd.Status,ejd.HisRawData,ejd.Barcode,ejd.UpdatedTime,ej.Status, ejd.Memo FROM [TmcRobo-Latest].[dbo].[ExamineJobDetail] as ejd LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineJob] As ej" + "\n";
     const id = "ON ejd.ExamineJobId = ej.Id" + "\n";
     const examineJobId = "WHERE ExamineJobId = " + reqExamineJobId;
     const sotBy = "ORDER BY Barcode ASC";
@@ -160,6 +160,17 @@ router.post('/detailList', function (req, res, next) {
       }
       else {
         datas["opecimenName"] = null;
+      }
+
+      datas["isUrgent"] = JSON.parse(columns[3].value)["IsUrgent"];
+
+      if(columns[7].value && JSON.parse(columns[7].value)["Orders"]) {
+        datas["checkOrders"] = JSON.parse(columns[7].value)["Orders"].map((item) => {
+          return item.OrderName;
+        });
+      }
+      else {
+        datas["checkOrders"] = [];
       }
 
       list.push(datas);
