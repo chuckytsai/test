@@ -24,12 +24,19 @@ const config = {
 
 /* 檢驗歷程查詢清單. */
 router.post('/list', function (req, res, next) {
-  const reqStartAt = req.body.startAt ? req.body.startAt : dayjs().format("YYYY-MM-DD");
-  const reqEndAt = req.body.endAt ? req.body.endAt : dayjs().format("YYYY-MM-DD");
-  const reqSortBy = req.body.sortBy ? req.body.sortBy.toUpperCase() : "ExamineDate";
-  const reqSort = req.body.sort ? req.body.sort.toUpperCase() : "ASC";
-  const reqPageSize = req.body.pageSize ? req.body.pageSize : 999;
-  const reqPageNumber = req.body.pageNumber ? req.body.pageNumber : 1;
+  const sortByList = ["createdTime", "queueNo", "status", "userName", "patientName", "waitingSecond", "serviceSecond"]
+
+  let reqStartAt = req.body.startAt ? req.body.startAt : dayjs().format("YYYY-MM-DD");
+  let reqEndAt = req.body.endAt ? req.body.endAt : dayjs().format("YYYY-MM-DD");
+  let reqSortBy = req.body.sortBy;
+  let reqSort = req.body.sort ? req.body.sort : "ASC";
+  let reqPageSize = req.body.pageSize ? req.body.pageSize : 999;
+  let reqPageNumber = req.body.pageNumber ? req.body.pageNumber : 1;
+
+  
+  if(!sortByList.includes(reqSortBy)) {
+      reqSortBy = "createdTime";
+  }
 
   const examineJobList = [];
   const connection = new Connection(config);
@@ -43,17 +50,18 @@ router.post('/list', function (req, res, next) {
       throw err;
     }
 
-    const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],[ExamineDate],[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
+    const sql = "SELECT DISTINCT ej.Id [Id],[PatientName],[JobTypeId],ej.CreatedTime,[QueueNo],[WaitingSecond],[ServiceSecond],ej.Status,us.Name,er.RoboServerOutletId FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
     const jobId = "ON ej.Id = er.JobId" + "\n";
     const joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us" + "\n";
     const userName = "ON us.Id = er.UserId" + "\n";
-    const startAt = "WHERE ej.ExamineDate >= '" + reqStartAt + "'" + "\n";
-    const endAt = "AND ej.ExamineDate <= '" + reqEndAt + "'" + "\n";
+    const startAt = "WHERE ej.CreatedTime >= '" + dayjs(reqStartAt).format("YYYY-MM-DD 00:00:00.000") + "'" + "\n";
+    const endAt = "AND ej.CreatedTime <= '" + dayjs(reqEndAt).format("YYYY-MM-DD 23:59:59.999") + "'" + "\n";
     const queueNo = "AND ej.QueueNo LIKE '" + keyWordIsNull(req.body.queueNo) + "'\n";
     const patientName = "AND ej.PatientName LIKE '" + keyWordIsNull(req.body.patientName) + "'\n";
-    const sotBy = "ORDER BY " + reqSortBy + "\n" + reqSort + ", QueueNo ASC";
-    console.log(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy)
-    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + sotBy, function (err, rows) {
+    const roboServerOutletId = "AND ((ej.WaitingSecond IS NULL AND ej.ServiceSecond IS NULL) OR (ej.WaitingSecond IS NOT NULL AND er.RoboServerOutletId IS NOT NULL))" + "\n";
+    const sotBy = "ORDER BY " + reqSortBy + "\n" + reqSort;
+    console.log(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + roboServerOutletId + sotBy)
+    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + queueNo + patientName + roboServerOutletId + sotBy, function (err, rows) {
       if (err) {
         res.json({
           code: 500,
@@ -61,8 +69,8 @@ router.post('/list', function (req, res, next) {
         });
       }
 
-      // 處理清單顯示多寡
-      const list = [];
+      //如果同一號碼被不同使用者叫到 則以處理完畢的那筆顯示
+      let list = [];
       examineJobList.map((item, i) => {
         if (i >= (reqPageSize * (reqPageNumber - 1)) && i < (reqPageNumber * reqPageSize)) {
           list.push(item);
@@ -73,8 +81,8 @@ router.post('/list', function (req, res, next) {
         code: 200,
         message: null,
         data: {
-          startAt : reqStartAt,
-          endAt : reqEndAt,
+          startAt: reqStartAt,
+          endAt: reqEndAt,
           counts: rows,
           totalPages: Math.ceil(rows / 10),
           list: [...list]
@@ -86,14 +94,15 @@ router.post('/list', function (req, res, next) {
       const datas = {};
       const UpdatedTime = String(columns[3].value);
       datas["examineId"] = columns[0].value;
-      datas["examineDate"] = dayjs(UpdatedTime).format("YYYY-MM-DD");
+      datas["createdTime"] = dayjs(UpdatedTime).format("YYYY-MM-DD");
       datas["queueNo"] = columns[4].value;
       datas["patientName"] = columns[1].value;
       datas["waitingSecond"] = columns[5].value;
       datas["serviceSecond"] = columns[6].value;
       datas["status"] = columns[7].value;
       datas["userName"] = columns[8].value;
-      datas["patientName"] = columns[1].value
+      datas["patientName"] = columns[1].value;
+      datas["roboServerOutletId"] = columns[9].value;
       examineJobList.push(datas);
     });
     connection.execSql(request);
@@ -224,7 +233,7 @@ router.post('/recordList', function (req, res, next) {
       const CreatedTime = Date.parse(columns[7].value);
       datas["id"] = columns[0].value;
       datas["status"] = columns[5].value;
-      datas["createdAt"] = Date.parse(dayjs(CreatedTime).set("hour", dayjs(CreatedTime).format("hh") - 8).format("YYYY-MM-DDThh:mm:ss")) / 1000;
+      datas["createdAt"] = Date.parse(dayjs(CreatedTime).set("hour", dayjs(CreatedTime).format("HH") - 8).format("YYYY-MM-DDTHH:mm:ss")) / 1000;
       datas["userName"] = columns[10].value;
       datas["counterNo"] = columns[24].value;
       list.push(datas);
