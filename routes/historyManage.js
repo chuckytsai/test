@@ -24,7 +24,7 @@ const config = {
 
 /* 檢驗歷程查詢清單. */
 router.post('/list', function (req, res, next) {
-  const sortByList = ["createdTime", "queueNo", "status", "userName", "patientName", "waitingSecond", "serviceSecond"]
+  const sortByList = ["createdtime", "queueno", "status", "username", "patientname", "waitingsecond", "servicesecond"];
 
   let reqStartAt = req.body.startAt ? req.body.startAt : dayjs().format("YYYY-MM-DD");
   let reqEndAt = req.body.endAt ? req.body.endAt : dayjs().format("YYYY-MM-DD");
@@ -33,9 +33,17 @@ router.post('/list', function (req, res, next) {
   let reqPageSize = req.body.pageSize ? req.body.pageSize : 999;
   let reqPageNumber = req.body.pageNumber ? req.body.pageNumber : 1;
 
-  
-  if(!sortByList.includes(reqSortBy)) {
-      reqSortBy = "createdTime";
+  if(sortByList.includes((reqSortBy).toLowerCase())) {
+      switch((reqSortBy).toLowerCase()) {
+        case "username":
+          reqSortBy = "us.Name";
+          break;
+        case "status":
+          reqSortBy = "ej.Status";
+          break;
+        default:
+          reqSortBy = "createdTime";
+      }
   }
 
   const examineJobList = [];

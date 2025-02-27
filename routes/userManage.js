@@ -53,7 +53,7 @@ router.get('/list', function (req, res, next) {
       const datas = {};
       datas["userId"] = columns[0].value;
       datas["userName"] = columns[1].value;
-      datas["userNmaeEng"] = columns[2].value;
+      datas["userNameEng"] = columns[2].value;
       datas["employeeId"] = columns[3].value;
       datas["title"] = columns[4].value;
       datas["isEnabled"] = columns[6].value;
@@ -170,7 +170,7 @@ router.post('/edit', function (req, res, next) {
             message: "成功",
             data: {
               userName: req.body.userName,
-              userNmaeEng: req.body.userNmaeEng,
+              userNameEng: req.body.userNameEng,
               title: req.body.title,
               isEnabled: req.body.isEnabled,
               isAdmin: req.body.isAdmin,
