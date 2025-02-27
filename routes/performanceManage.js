@@ -40,15 +40,17 @@ router.post('/list', function (req, res, next) {
       throw err;
     }
 
-    const sql = "SELECT DISTINCT ej.Id ,[JobTypeId],ej.CreatedTime,ej.UpdatedTime,[FirstCalledTime],[FinishedTime],[WaitingSecond],[ServiceSecond],[LastRecordId],us.Name,er.UserId FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
+    const sql = "SELECT DISTINCT ej.Id ,[JobTypeId],ej.CreatedTime,ej.UpdatedTime,[FirstCalledTime],[FinishedTime],[WaitingSecond],[ServiceSecond],er.RoboServerOutletId,us.Name,er.UserId FROM [TmcRobo-Latest].[dbo].[ExamineJob] as ej LEFT JOIN [TmcRobo-Latest].[dbo].[ExamineRecord] As er" + "\n";
     const jobId = "ON ej.Id = er.JobId" + "\n";
     const joninUser = "LEFT JOIN [TmcRobo-Latest].[dbo].[User] as us" + "\n";
     const userName = "ON us.Id = er.UserId" + "\n";
     const startAt = "WHERE ej.CreatedTime >= '" + dayjs(reqStartAt).format("YYYY-MM-DD HH:mm:ss.000") + "'" + "\n";
     const endAt = "AND ej.CreatedTime <= '" + dayjs(reqEndAt).format("YYYY-MM-DD HH:mm:ss.999") + "'" + "\n";
+    const finishedTime = "AND ej.FinishedTime IS NOT NULL" + "\n";
+    const roboServerOutletId = "AND er.RoboServerOutletId IS NOT NULL" + "\n";
     
-    console.log(sql + jobId + joninUser + userName + startAt + endAt);
-    request = new Request(sql + jobId + joninUser + userName + startAt + endAt , function (err, rows) {
+    console.log(sql + jobId + joninUser + userName + startAt + endAt + finishedTime + roboServerOutletId);
+    request = new Request(sql + jobId + joninUser + userName + startAt + endAt + finishedTime + roboServerOutletId, function (err, rows) {
       if (err) {
         res.json({
           code: 500,
@@ -66,11 +68,11 @@ router.post('/list', function (req, res, next) {
         let upDatedTime = Date.parse(item.upDatedTime);
         upDatedTime = Date.parse(dayjs(upDatedTime).set("hour", dayjs(upDatedTime).format("HH") - 8).format("YYYY-MM-DDTHH:mm:ss"));
         
-        if(idx < 0 && item.upDatedTime) {
+        if(idx < 0) {
           item[whatSchedule(dayjs(upDatedTime).format("HHmm")) + "PatientCount"] = item[whatSchedule(dayjs(upDatedTime).format("HHmm")) + "PatientCount"] + 1;
           list.push(item);
         }
-        else if(idx > -1 && item.upDatedTime) {
+        else if(idx > -1) {
           list[idx][whatSchedule(dayjs(upDatedTime).format("HHmm")) + "PatientCount"] = list[idx][whatSchedule(dayjs(upDatedTime).format("HHmm")) + "PatientCount"] + 1;
           list[idx].waitingSecond;
           list[idx].count = list[idx].count + 1;
