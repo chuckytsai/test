@@ -33,17 +33,17 @@ router.post('/list', function (req, res, next) {
   let reqPageSize = req.body.pageSize ? req.body.pageSize : 999;
   let reqPageNumber = req.body.pageNumber ? req.body.pageNumber : 1;
 
-  if(sortByList.includes((reqSortBy).toLowerCase())) {
-      switch((reqSortBy).toLowerCase()) {
-        case "username":
-          reqSortBy = "us.Name";
-          break;
-        case "status":
-          reqSortBy = "ej.Status";
-          break;
-        default:
-          reqSortBy = "createdTime";
-      }
+  if (sortByList.includes((reqSortBy).toLowerCase())) {
+    switch ((reqSortBy).toLowerCase()) {
+      case "username":
+        reqSortBy = "us.Name";
+        break;
+      case "status":
+        reqSortBy = "ej.Status";
+        break;
+      default:
+        reqSortBy = "createdTime";
+    }
   }
 
   const examineJobList = [];
@@ -122,7 +122,7 @@ router.post('/list', function (req, res, next) {
 
 /* 單筆檢驗項目清單. */
 router.post('/detailList', function (req, res, next) {
-  const reqExamineJobId = req.body.examineJobId ? "'" +  req.body.examineJobId + "'\n" : "'00000000-0000-0000-0000-000000000000'" + "\n";
+  const reqExamineJobId = req.body.examineJobId ? "'" + req.body.examineJobId + "'\n" : "'00000000-0000-0000-0000-000000000000'" + "\n";
   const list = [];
   const connection = new Connection(config);
   connection.on('connect', function await(err) {
@@ -139,7 +139,7 @@ router.post('/detailList', function (req, res, next) {
     const examineJobId = "WHERE ExamineJobId = " + reqExamineJobId;
     const sotBy = "ORDER BY Barcode ASC";
     console.log(sql + id + examineJobId + sotBy)
-    request = new Request(sql + id +  examineJobId + sotBy, function (err, rows) {
+    request = new Request(sql + id + examineJobId + sotBy, function (err, rows) {
       if (err) {
         res.json({
           code: 500,
@@ -158,21 +158,21 @@ router.post('/detailList', function (req, res, next) {
       const datas = {};
       datas["barcode"] = columns[4].value;
       datas["status"] = columns[6].value;
-      if(JSON.parse(columns[3].value)["ContainerName"]) {
+      if (JSON.parse(columns[3].value)["ContainerName"]) {
         datas["containerName"] = JSON.parse(columns[3].value)["ContainerName"];
       }
       else {
         datas["containerName"] = null;
       }
 
-      if(JSON.parse(columns[3].value)["SpecimenName"]) {
+      if (JSON.parse(columns[3].value)["SpecimenName"]) {
         datas["specimenName"] = JSON.parse(columns[3].value)["SpecimenName"];
       }
       else {
         datas["specimenName"] = null;
       }
 
-      if(JSON.parse(columns[3].value)["OrderNames"]) {
+      if (JSON.parse(columns[3].value)["OrderNames"]) {
         datas["orderNames"] = JSON.parse(columns[3].value)["OrderNames"];
       }
       else {
@@ -181,7 +181,7 @@ router.post('/detailList', function (req, res, next) {
 
       datas["isUrgent"] = JSON.parse(columns[3].value)["IsUrgent"];
 
-      if(columns[7].value && JSON.parse(columns[7].value)["Orders"]) {
+      if (columns[7].value && JSON.parse(columns[7].value)["Orders"]) {
         datas["checkOrders"] = JSON.parse(columns[7].value)["Orders"].map((item) => {
           return item.OrderName;
         });
@@ -201,7 +201,7 @@ router.post('/detailList', function (req, res, next) {
 
 /* 單筆檢驗歷程清單. */
 router.post('/recordList', function (req, res, next) {
-  const reqExamineJobId = req.body.examineJobId ? "'" +  req.body.examineJobId + "'\n" : "'00000000-0000-0000-0000-000000000000'" + "\n"
+  const reqExamineJobId = req.body.examineJobId ? "'" + req.body.examineJobId + "'\n" : "'00000000-0000-0000-0000-000000000000'" + "\n"
 
   const list = [];
   const connection = new Connection(config);
@@ -215,12 +215,12 @@ router.post('/recordList', function (req, res, next) {
       throw err;
     }
     const sql = "SELECT * FROM [TmcRobo-Latest].[dbo].[ExamineRecord] as er LEFT JOIN [TmcRobo-Latest].[dbo].[User] As us" + "\n";
-    const id = "ON er.UserId = us.Id"+ "\n";
-    const clerk = "LEFT JOIN [TmcRobo-Latest].[dbo].[Clerk] As ck"+ "\n";
-    const clerkId = "ON er.ClerkId LIKE ck.Id"+ "\n";
+    const id = "ON er.UserId = us.Id" + "\n";
+    const clerk = "LEFT JOIN [TmcRobo-Latest].[dbo].[Clerk] As ck" + "\n";
+    const clerkId = "ON er.ClerkId LIKE ck.Id" + "\n";
     const examineJobId = "WHERE JobId = " + reqExamineJobId;
     const sotBy = "ORDER BY CreatedTime ASC";
-    console.log(sql + id +  clerk + clerkId + examineJobId + sotBy)
+    console.log(sql + id + clerk + clerkId + examineJobId + sotBy)
     request = new Request(sql + id + clerk + clerkId + examineJobId + sotBy, function (err, rows) {
       if (err) {
         res.json({
