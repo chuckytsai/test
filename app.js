@@ -11,9 +11,10 @@ var indexRouter = require('./routes/index');
 var communityRouter = require('./routes/community');
 var usersRouter = require('./routes/users');
 var userManageRouter = require('./routes/userManage');
-var historyManage = require('./routes/historyManage');
-var performanceManage = require('./routes/performanceManage');
-var personalPerformance = require('./routes/personalPerformance');
+var historyManageRouter = require('./routes/historyManage');
+var performanceManageRouter = require('./routes/performanceManage');
+var personalPerformanceRouter = require('./routes/personalPerformance');
+var counterMappingTemplateRouter = require('./routes/counterMappingTemplate');
 
 var app = express();
 
@@ -32,9 +33,10 @@ app.use('/', indexRouter);
 app.use('/community', communityRouter);
 app.use('/users', usersRouter);
 app.use('/userManage', userManageRouter);
-app.use('/historyManage', historyManage);
-app.use('/performanceManage', performanceManage);
-app.use('/personalPerformance', personalPerformance);
+app.use('/historyManage', historyManageRouter);
+app.use('/performanceManage', performanceManageRouter);
+app.use('/personalPerformance', personalPerformanceRouter);
+app.use('/counterMappingTemplate', counterMappingTemplateRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
