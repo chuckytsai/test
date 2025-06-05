@@ -96,11 +96,11 @@ router.post('/add', function (req, res, next) {
       }
       else {
         const sqlAdd = "INSERT [User] (Id, Name, NameEng, EmployeeId, Title, Password, IsEnabled, IsAdmin, UpdatedTime, AreaId, EMailAddress, Setting)";
-        const englishName = req.body.englishName ? req.body.englishName : ' '
+        const userNameEng = req.body.userNameEng ? req.body.userNameEng : ' '
         const isAdmin = req.body.isAdmin ? 1 : 0;
         const UpdatedTime = String(req["_startTime"]);
 
-        const sqlValue = "VALUES ('" + uuidv4() + "', '" + req.body.userName + "', '" + englishName + "','" + req.body.employeeId + "', '" + req.body.title + "', 'BriJvAP8DqiRFdaMLsQCFQ==', 1, " + isAdmin + ", '" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "', NULL, NULL, NULL)";
+        const sqlValue = "VALUES ('" + uuidv4() + "', '" + req.body.userName + "', '" + userNameEng + "','" + req.body.employeeId + "', '" + req.body.title + "', 'BriJvAP8DqiRFdaMLsQCFQ==', 1, " + isAdmin + ", '" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "', NULL, NULL, NULL)";
         requestAdd = new Request(sqlAdd + sqlValue, function (err, rows) {
           if (err) {
             res.json({
@@ -137,6 +137,7 @@ router.post('/edit', function (req, res, next) {
       throw err;
     }
     const sqlGet = "SELECT * FROM [User] WHERE Id ='" + req.body.userId + "'";
+    console.log(sqlGet);
     request = new Request(sqlGet, function (err, rows) {
       if (err) {
         res.json({
@@ -157,6 +158,7 @@ router.post('/edit', function (req, res, next) {
         const isEnabled = req.body.isEnabled ? 1 : 0;
         const UpdatedTime = String(req["_startTime"]);
         const sql = "UPDATE [User] SET Name='" + req.body.userName + "', NameEng='" + req.body.userNameEng + "',  Title='" + req.body.title + "', IsEnabled=" + isEnabled + ", IsAdmin=" + isAdmin + ", UpdatedTime='" + dayjs(UpdatedTime).format("YYYY-MM-DD hh:mm:SSS") + "' WHERE Id=" + "'" + req.body.userId + "'";
+        console.log(sql)
         requestEdit = new Request(sql, function (err, rows) {
           if (err) {
             res.json({
